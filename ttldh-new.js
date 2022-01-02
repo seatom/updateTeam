@@ -45,8 +45,8 @@ const ttldh = $.isNode() ? (process.env.ttldh ? process.env.ttldh : "") : ($.get
         // 兑换
         await ttl_dh();
 
-        $.msg($.name, ``, `\n${$.message}`)
-        if ($.isNode()) await notify.sendNotify($.name, `${$.message}`);
+        $.msg($.name, ``, `\n${message}`)
+        if ($.isNode()) await notify.sendNotify($.name, `${message}`);
     }
 
 
