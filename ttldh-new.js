@@ -7,9 +7,26 @@ const $ = new Env('太太乐兑换');
 let message;
 const notify = $.isNode() ? require('./sendNotify') : '';
 // 633=10元手机话费（仅电信用户） 631=30元手机话费（仅移动用户） 62=5元手机话费（仅联通用户） 61=2元手机话费（仅联通用户）
-let giftAmount, giftNames, giftPrice;
+let giftAmount, giftNames, giftPrice, date;
 let ttlhd = $.isNode() ? (process.env.ttlhd ? process.env.ttlhd : "") : ($.getdata('ttlhd') ? $.getdata('ttlhd') : "");
 const ttldh = $.isNode() ? (process.env.ttldh ? process.env.ttldh : "") : ($.getdata('ttldh') ? $.getdata('ttldh') : "");
+
+Date.prototype.Format = function (fmt) { //author: meizz
+    var o = {
+        "M+": this.getMonth() + 1, //月份
+        "d+": this.getDate(), //日
+        "h+": this.getHours(), //小时
+        "m+": this.getMinutes(), //分
+        "s+": this.getSeconds(), //秒
+        "S": this.getMilliseconds() //毫秒
+    };
+    if (/(y+)/.test(fmt))
+        fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+    for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt))
+            fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+    return fmt;
+}
 
 !(async () => {
     message = '';
@@ -17,7 +34,7 @@ const ttldh = $.isNode() ? (process.env.ttldh ? process.env.ttldh : "") : ($.get
     giftNames = {};
     giftPrice = {};
     await ttl_gift();
-
+    date = (new Date()).Format("yyyyMMdd");
     ttldhArr = ttldh.split('@');
     console.log(`========共${ttldhArr.length}个兑换账号========\n`);
     ttlhdArr = ttlhd.split('@');
@@ -35,8 +52,12 @@ const ttldh = $.isNode() ? (process.env.ttldh ? process.env.ttldh : "") : ($.get
             continue;
         }
         console.log(`第 ${k + 1} 个账号 ${user} 要兑换的商品: ${stockName} 商品库存: ${stockAmount}，进行兑换`);
-        // 登录app
-        await ttl_login();
+
+        // 获取缓存的积分
+        $.integral = $.getdata(`${date}_${user}`)
+        if (typeof $.integral === 'undefined')
+            // 登录app
+            await ttl_login();
         if ($.integral - stockPrice < 0) {
             console.log(`账号 ${user} 积分不足以兑换，取消兑换`);
             message += `\n【兑换商品】 ${stockName} \n【兑换结果】 积分不足以兑换`;
@@ -44,7 +65,8 @@ const ttldh = $.isNode() ? (process.env.ttldh ? process.env.ttldh : "") : ($.get
         }
         // 兑换
         await ttl_dh();
-
+        // 兑换完减少积分
+        $.setdata($.integral - stockPrice, `${date}_${user}`);
         $.msg($.name, ``, `\n${message}`)
         if ($.isNode()) await notify.sendNotify($.name, `${message}`);
     }
@@ -119,6 +141,8 @@ async function ttl_login() {
                     $.userName = data.user.userName;
                     $.integral =  data.user.integral;
                     console.log(`token：${$.token} 积分：${$.integral}`);
+                    $.setdata($.integral, `${date}_${user}`);
+                    console.log(`设置当天积分缓存成功!`);
                 }
                 console.log('登录信息 ' + data.message);
                 message += `\n【账号】 ${$.userName}(${data.user.mobile}) \n【登录信息】 ${data.message} \n【积分】 ${$.integral}`;
