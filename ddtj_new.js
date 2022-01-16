@@ -85,11 +85,13 @@ async function question_task() {
     let result = httpResult
     if (!result) return
 
-    await $.wait(Math.floor(Math.random() * (150 - 100 + 100) + 200))
+    await $.wait(Math.floor(Math.random() * (150 - 100 + 100) + 300))
     if (result.code === 200) {
         dydcode = result.data.url_code
         // 题目id
         await read_action()
+    } else {
+        $.log(`文章答题已经答完啦~改个时间再来吧！`)
     }
 }
 
@@ -124,12 +126,13 @@ async function jump_wxurl() {
     let result = httpResult
     if (!result) return
 
-    if (result.match(/profile_nickname">(.+?)<\/strong/) != null) {
-        author = result.match(/profile_nickname">(.+?)<\/strong/)[1]
-        $.log(`答案: ${result.match(/profile_nickname">(.+?)<\/strong/)[1]}`)
-        await $.wait(Math.floor(Math.random() * (1500 - 1000 + 1000) + 1000))
+    if (result.match(/nickname(.*?)">(.+?)<\/strong/) != null) {
+        author = result.match(/nickname(.*?)">(.+?)<\/strong/)[2]
+        $.log(`答案: ${author}`)
+        await $.wait(Math.floor(Math.random() * (150 - 100 + 100) + 300))
         // 验证
         await read_time_start()
+        await read_subject_query_v2()
     }
 
 }
@@ -206,7 +209,7 @@ async function cash_out() {
 
     if (result.code === 200) {
         money = result.data.money
-        $.log(`\n当前余额: ${money}元 累计提现: ${result.data.cash_out_total}元`)
+        $.log(`当前余额: ${money}元 累计提现: ${result.data.cash_out_total}元`)
         if (money >= 0.3) {
             msg += `\n【累计提现】 ${result.data.cash_out_total}元\n【本次提现】 ${money}元`
             await $.wait(Math.floor(Math.random() * (1500 - 1000 + 1000) + 2000))
